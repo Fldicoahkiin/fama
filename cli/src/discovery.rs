@@ -6,6 +6,12 @@ use std::path::{Path, PathBuf};
 const IGNORED_FILENAMES: &[&str] =
 	&["pnpm-lock.yaml", "package-lock.json", ".terraform.lock.hcl"];
 
+/// Glob patterns for files to ignore (minified files, etc.)
+const IGNORED_PATTERNS: &[(&str, &str)] = &[
+	("*.min.css", "minified CSS"),
+	("*.min.js", "minified JavaScript"),
+];
+
 const SUPPORTED_EXTENSIONS: &[&str] = &[
 	"js", "jsx", "ts", "tsx", "mjs", "mjsx", "mts", "json", "jsonc", "css",
 	"scss", "less", "html", "vue", "svelte", "astro", "yaml", "yml", "md",
@@ -16,11 +22,27 @@ const SUPPORTED_EXTENSIONS: &[&str] = &[
 	"proto",
 ];
 
+/// Check if a filename matches any ignored pattern
+fn is_ignored_by_pattern(filename: &str) -> bool {
+	for (pattern, _) in IGNORED_PATTERNS {
+		if let Ok(glob) = glob::Pattern::new(pattern) {
+			if glob.matches(filename) {
+				return true;
+			}
+		}
+	}
+	false
+}
+
 /// Check if a file is supported for formatting
 fn is_supported_path(path: &Path) -> bool {
 	// Skip known generated/lock files
 	if let Some(filename) = path.file_name().and_then(|f| f.to_str()) {
 		if IGNORED_FILENAMES.contains(&filename) {
+			return false;
+		}
+		// Skip files matching ignored patterns (minified files, etc.)
+		if is_ignored_by_pattern(filename) {
 			return false;
 		}
 	}
