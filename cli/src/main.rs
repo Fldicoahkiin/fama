@@ -18,7 +18,7 @@ use rayon::prelude::*;
 
 #[derive(Parser)]
 #[command(name = "fama")]
-#[command(about = "A code formatter for frontend projects", long_about = None)]
+#[command(about = "A code formatter for many languages", long_about = None)]
 struct Cli {
 	/// Glob patterns to match files
 	#[arg(default_values_t = ["**/*".to_string()])]

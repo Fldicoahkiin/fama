@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Fama is a unified cross-language code formatter written in Rust that aggregates multiple specialized formatters into a single CLI tool. It formats diverse file types (JavaScript, TypeScript, Python, Rust, YAML, Markdown, Shell, Go, Dockerfile, and more) through a unified interface while respecting a centralized configuration.
+Fama is a unified cross-language code formatter written in Rust that aggregates multiple specialized formatters into a single CLI tool. It formats 30+ languages (JavaScript, TypeScript, JSX, TSX, JSON, JSONC, CSS, SCSS, Less, Sass, HTML, Vue, Svelte, Astro, GraphQL, YAML, TOML, Markdown, Rust, Python, Lua, Ruby, PHP, Shell, Go, Zig, HCL, Dockerfile, SQL, XML, C, C++, C#, Objective-C, Java, Protobuf) through a unified interface while respecting a centralized configuration.
 
 ## Build Commands
 
@@ -28,19 +28,25 @@ fama --export    # Generate .editorconfig and rustfmt.toml files
 
 ### Workspace Structure
 
-The project is a Cargo workspace with 10 crates:
+The project is a Cargo workspace with 15 crates:
 
 - `cli/` - Main CLI application with file discovery and routing
 - `common/` - Shared types: `FileType` enum, `FormatConfig`, indentation/quote styles
 - `formatters/` - Language-specific formatter implementations:
-  - `biome/` - JS/TS/JSX/TSX/JSON/JSONC/HTML/Vue/Svelte/Astro (via Biome crates)
+  - `biome/` - JS/TS/JSX/TSX/JSON/JSONC/HTML/Vue/Svelte/Astro/GraphQL (via Biome crates)
   - `dprint/` - Markdown, YAML, CSS/SCSS/LESS/Sass (via dprint + Malva)
   - `toml/` - TOML files (via toml_edit)
   - `rustfmt/` - Rust (via rust-format crate)
   - `python/` - Python (via ruff crates)
   - `lua/` - Lua (via stylua crate)
   - `goffi/` - Shell scripts and Go (Go FFI wrapper around mvdan/sh and go/format)
+  - `zigffi/` - Zig (Zig FFI wrapper around zig fmt)
   - `dockerfile/` - Dockerfile formatting
+  - `sqruff/` - SQL (via sqruff crate)
+  - `xml/` - XML (via quick-xml)
+  - `ruby/` - Ruby (via rubyfmt)
+  - `php/` - PHP (via Mago)
+  - `clang/` - C/C++/C#/Objective-C/Java/Protobuf (via clang-format WASM)
 
 ### Data Flow
 
