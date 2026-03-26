@@ -66,6 +66,7 @@ struct FormatStats {
 	formatted: usize,
 	unchanged: usize,
 	errors: Vec<String>,
+	formatted_files: Vec<std::path::PathBuf>,
 }
 
 impl FormatStats {
@@ -74,6 +75,7 @@ impl FormatStats {
 		self.formatted += other.formatted;
 		self.unchanged += other.unchanged;
 		self.errors.extend(other.errors);
+		self.formatted_files.extend(other.formatted_files);
 		self
 	}
 }
@@ -116,7 +118,7 @@ fn run(options: Cli) -> anyhow::Result<()> {
 		.collect();
 
 	// Parallel formatting with fold/reduce pattern
-	let stats = files
+	let mut stats = files
 		.par_iter()
 		.fold(FormatStats::default, |mut stats, file| {
 			match formatter::format_file(file, check) {
@@ -129,6 +131,7 @@ fn run(options: Cli) -> anyhow::Result<()> {
 						);
 					}
 					stats.formatted += 1;
+					stats.formatted_files.push(file.clone());
 				}
 				Ok(false) => {
 					if debug {
@@ -150,6 +153,19 @@ fn run(options: Cli) -> anyhow::Result<()> {
 		})
 		.reduce(FormatStats::default, FormatStats::merge);
 
+	// If --staged was used, automatically re-stage formatted files
+	let restaged_count = if options.staged && !stats.formatted_files.is_empty() {
+		match git::stage_files(&stats.formatted_files) {
+			Ok(count) => count,
+			Err(e) => {
+				stats.errors.push(format!("Failed to re-stage files: {}", e));
+				0
+			}
+		}
+	} else {
+		0
+	};
+
 	// Print collected errors (always print errors)
 	for error in &stats.errors {
 		eprintln!("Error: {}", error);
@@ -165,12 +181,16 @@ fn run(options: Cli) -> anyhow::Result<()> {
 				stats.errors.len()
 			);
 		} else {
-			println!(
+			let mut message = format!(
 				"Formatted {} files, {} unchanged, {} errors",
 				stats.formatted,
 				stats.unchanged,
 				stats.errors.len()
 			);
+			if restaged_count > 0 {
+				message.push_str(&format!(", restaged {}", restaged_count));
+			}
+			println!("{}", message);
 		}
 	}
 

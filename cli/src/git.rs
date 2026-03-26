@@ -63,3 +63,31 @@ pub fn get_git_files(staged: bool) -> anyhow::Result<Vec<PathBuf>> {
 
 	Ok(files)
 }
+
+/// Stage files with git add
+/// Returns the number of files successfully staged
+pub fn stage_files(files: &[std::path::PathBuf]) -> anyhow::Result<usize> {
+	if files.is_empty() {
+		return Ok(0);
+	}
+
+	// Convert paths to strings for git command
+	let path_args: Vec<String> = files
+		.iter()
+		.filter_map(|p| p.to_str())
+		.map(String::from)
+		.collect();
+
+	let output = Command::new("git")
+		.arg("add")
+		.args(&path_args)
+		.output()
+		.map_err(|e| anyhow::anyhow!("Failed to run git add: {}", e))?;
+
+	if !output.status.success() {
+		let stderr = String::from_utf8_lossy(&output.stderr);
+		return Err(anyhow::anyhow!("git add failed: {}", stderr));
+	}
+
+	Ok(path_args.len())
+}
